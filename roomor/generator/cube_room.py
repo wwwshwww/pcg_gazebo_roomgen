@@ -6,7 +6,7 @@ import trimesh
 import copy
 from pcg_gazebo.generators.shapes import random_points_to_triangulation
 
-from ..geometric_util import get_corrected_poly_with_model, get_square_horizon
+from ..geometric_util import get_corrected_poly_with_model, get_square_horizon, add_dimension, get_extended_face
 from ..room_generator_factory import RoomGeneratorFactory, RoomConfig
 
 class CubeRoomConfig(RoomConfig):
