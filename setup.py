@@ -1,13 +1,14 @@
 import os
 import sys
 import setuptools
+import codecs
 
 version_file = os.path.join(os.path.dirname(__file__), 'roomor/version.py')
 
 with open(version_file, 'r') as f:
     __version__ = eval(f.read().strip().split('=')[-1])
     
-with open("README.md", "r", encoding="utf-8") as fh:
+with codecs.open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
     
 requirements = [
