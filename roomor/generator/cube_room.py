@@ -153,7 +153,7 @@ class CubeRoomConfig(RoomConfig):
 
         map_poly = Polygon(
             list(self.wall_interior_polygon.exterior.coords), 
-            map(lambda p: list(p.exterior.coords), all_poly)
+            list(map(lambda p: list(p.exterior.coords), all_poly))
         )
         return map_poly
     
