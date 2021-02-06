@@ -142,6 +142,10 @@ class CubeRoomConfig(RoomConfig):
         else:
             return None
         
+    def spawn_all(self):
+        self.set_modelspace_force(self.wall_tag)
+        super(CubeRoomConfig, self).spawn_all()
+        
     def get_freespace_poly(self):
         all_poly = []
         for polys in self.polygon_group[self.ozpolys_tag]:
