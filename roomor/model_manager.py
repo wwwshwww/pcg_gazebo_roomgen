@@ -1,6 +1,7 @@
 import copy
 from pcg_gazebo.simulation.properties.pose import Pose
 from pcg_gazebo.generators.creators import create_models_from_config
+from multiprocessing import Process
 
 class ModelManager(): ## orientation: [roll, pitch, yaw] (degrees) or [qx, qy, qz, qw] (quaternion)
     
@@ -53,14 +54,19 @@ class ModelManager(): ## orientation: [roll, pitch, yaw] (degrees) or [qx, qy, q
     def apply_model(self, tag, positions, orientations):
         self._delete_other_models()
         self._delete_models(tag, len(positions), len(self.modelspaces[tag]))
-            
-        for i in range(len(positions)):
-            self.modelspaces[tag][i].spawn(
+        
+        spawn_f = [None] * len(positions)
+        spawn_kwargs = [None] * len(positions)
+        
+        for i in range(len(spawn_f)):
+            spawn_f[i] = self.modelspaces[tag][i].spawn
+            spawn_kwargs[i] = dict(
                 gazebo_proxy=self.gazebo_proxy, 
                 robot_namespace=self.modelspaces[tag][i].name,
                 pos=list(positions[i]),
                 rot=list(orientations[i])
             )
+        self._multiprocessing(spawn_f, spawn_kwargs)
 
     def _is_mine_model(self, model_name):
         namespace = model_name.split("-")[1]
@@ -71,14 +77,27 @@ class ModelManager(): ## orientation: [roll, pitch, yaw] (degrees) or [qx, qy, q
         name = model_name.split("-")
         return name[0] == "mm" and str.isdigit(name[1])
 
-    def _delete_models(self, tag, start, stop):
-        for i in range(start, stop):
-            self.gazebo_proxy.delete_model(model_name="mm-{}-{}_{}".format(self.namespace, tag, i))
+    def _delete_models(self, tag, start, stop):     
+        del_kwargs = [dict(model_name="mm-{}-{}_{}".format(self.namespace, tag, i)) for i in range(start, stop)]
+        self._multiprocessing(self.gazebo_proxy.delete_model, del_kwargs)
 
     def _delete_other_models(self):
-        models = self.gazebo_proxy.get_model_names()
-        manager_models = filter(ModelManager._is_manager_model, models)
+        manager_models = filter(ModelManager._is_manager_model, self.gazebo_proxy.get_model_names())
         other_models = filter(lambda m: not self._is_mine_model(m), manager_models)
         
-        for m in other_models:
-            self.gazebo_proxy.delete_model(model_name=m)
+        del_kwargs = [dict(model_name=m) for m in other_models]
+        self._multiprocessing(self.gazebo_proxy.delete_model, del_kwargs)
+            
+    def _multiprocessing(self, targets, kwargs):
+        if callable(targets):
+            targets = [targets] * len(kwargs)
+        ps = [None] * len(kwargs)
+        for i in range(len(ps)):
+            ps[i] = Process(target=targets[i], kwargs=kwargs[i])
+        for p in ps:
+            p.start()
+        for p in ps:
+            p.join()
+        while True:
+            if all([p.exitcode == 0 for p in ps]):
+                break
