@@ -90,10 +90,12 @@ class ModelManager(): ## orientation: [roll, pitch, yaw] (degrees) or [qx, qy, q
             
     def _multiprocessing(self, targets, kwargs):
         if callable(targets):
-            targets = [targets] * len(kwargs)
-        ps = [None] * len(kwargs)
-        for i in range(len(ps)):
-            ps[i] = Process(target=targets[i], kwargs=kwargs[i])
+            f = [targets] * len(kwargs)
+        else:
+            f = targets
+            
+        ps = [Process(target=f[i], kwargs=kwargs[i]) for i in range(len(kwargs))]
+        
         for p in ps:
             p.start()
         for p in ps:
