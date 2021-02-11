@@ -85,6 +85,18 @@ class CubeRoomConfig(RoomConfig):
         self.polygon_group[self.ozpolys_tag] = list()
         self.polygon_group[self.ozhulls_tag] = list()
 
+    @property
+    def target_pose(self):
+        return self.spawn_config[self.target_tag]
+    
+    @property
+    def wall_pose(self):
+        return self.spawn_config[self.wall_tag]
+    
+    @property
+    def obstacle_pose(self):
+        return self.spawn_config[self.obstacle_tag]
+        
     def prepare_model_manager(self, max_obstacle_count, max_target_count):
         self.register_empty(self.wall_tag, self.wall_config_base, 1)
         self.set_modelspace_force(self.wall_tag)
