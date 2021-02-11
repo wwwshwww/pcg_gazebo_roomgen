@@ -2,8 +2,11 @@ import abc
 
 import numpy as np
 import shapely
-
 from shapely.geometry import Polygon
+
+from multiprocessing import Pool, Array
+from contextlib import closing
+
 from pcg_gazebo.task_manager import GazeboProxy
 from pcg_gazebo.simulation.world import World
 from pcg_gazebo.simulation.model import SimulationModel
@@ -11,10 +14,9 @@ from pcg_gazebo.simulation.model import SimulationModel
 from pcg_gazebo.generators.occupancy import generate_occupancy_grid
 from pcg_gazebo.visualization import plot_occupancy_grid
 import io
-import cv2
 
 from .model_manager import ModelManager
-
+from .geometric_util import vec_to_trans
             
 class RoomGeneratorFactory(object):
 
@@ -110,24 +112,49 @@ class RoomConfig(object):
         return Polygon(list(space.exterior.coords), [list(p.exterior.coords) for p in union_poly])
         
     @abc.abstractmethod
-    def get_occupancy_grid(self, exterior_wall_tag, exclude_tags=[None]):     
-        wall_name = self.model_manager.get_base_models(exterior_wall_tag, 1)[0].name
+    def get_occupancy_grid(self, freespace_poly, origin_pos=(0,0), origin_ori=0, resolution=0.050, map_size=512):
+#         wall_name = self.model_manager.get_base_models(exterior_wall_tag, 1)[0].name
         
-        models = self._get_all_moved_models(exclude_tags=exclude_tags)
-        models['ground_plane'] = SimulationModel.from_gazebo_model('ground_plane')        
+#         models = self._get_all_moved_models(exclude_tags=exclude_tags)
+#         models['ground_plane'] = SimulationModel.from_gazebo_model('ground_plane')        
         
-        fig = plot_occupancy_grid(
-            models,
-            with_ground_plane=True,
-            static_models_only=False,
-            exclude_contains=['ground_plane'],
-            ground_plane_models=[wall_name]
-        )
+#         fig = plot_occupancy_grid(
+#             models,
+#             with_ground_plane=True,
+#             static_models_only=False,
+#             exclude_contains=['ground_plane'],
+#             ground_plane_models=[wall_name]
+#         )
 
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png')
-        enc = np.frombuffer(buf.getvalue(), dtype=np.uint8)
-        dst = cv2.imdecode(enc, cv2.IMREAD_GRAYSCALE)
+#         buf = io.BytesIO()
+#         fig.savefig(buf, format='png')
+#         enc = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+#         dst = cv2.imdecode(enc, cv2.IMREAD_GRAYSCALE)
         
-        return dst
+        mat1 = vec_to_trans(origin_pos)
+        mat2 = np.array([
+            [np.cos(origin_ori), -np.sin(origin_ori), 0],
+            [np.sin(origin_ori), np.cos(origin_ori), 0],
+            [0, 0, 1]
+        ])
+        corrected = trimesh(freespace_poly, np.dot(mat2, mat1))
+    
+        half_length = (map_size * resolution) // 2
+        lin = np.linspace(-half_length, half_length, map_size)
+        xx, yy = np.meshgrid(lin, lin)
+        xc = xx.flatten()
+        yc = yy.flatten()
+        
+        data = np.full([length*length], 0)
+
+        xl = Array('d', xc)
+        yl = Array('d', yc)
+
+        def mu(i):
+            return corrected.contains(Point(xl[i], yl[i]))
+
+        with closing(Pool()) as pool:
+            data[pool.map(mu, range(len(xc)))] = 255
+    
+        return data
         

@@ -16,7 +16,6 @@ requirements = [
     'trimesh[easy]',
     'shapely',
     'scikit-learn',
-    'opencv-python',
     'pcg_gazebo'
 ]
 
