@@ -5,6 +5,8 @@ c = CubeRoomGenerator(obstacle_count=10)
 generated_room1 = c.generate_new()
 generated_room2 = c.generate_new()
 
+generated_room2.get_occupancy_grid(generated_room2.get_freespace_poly())
+
 st = time.time()
 generated_room1.spawn_all()
 print('spawn time: {}'.format(time.time()-st))

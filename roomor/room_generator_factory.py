@@ -2,7 +2,8 @@ import abc
 
 import numpy as np
 import shapely
-from shapely.geometry import Polygon
+import trimesh
+from shapely.geometry import Polygon, Point
 
 from multiprocessing import Pool, Array
 from contextlib import closing
@@ -131,13 +132,16 @@ class RoomConfig(object):
 #         enc = np.frombuffer(buf.getvalue(), dtype=np.uint8)
 #         dst = cv2.imdecode(enc, cv2.IMREAD_GRAYSCALE)
         
-        mat1 = vec_to_trans(origin_pos)
-        mat2 = np.array([
-            [np.cos(origin_ori), -np.sin(origin_ori), 0],
-            [np.sin(origin_ori), np.cos(origin_ori), 0],
-            [0, 0, 1]
-        ])
-        corrected = trimesh(freespace_poly, np.dot(mat2, mat1))
+        if origin_pos == (0,0) and origin_ori == 0:
+            corrected = freespace_poly
+        else:
+            mat1 = vec_to_trans(origin_pos)
+            mat2 = np.array([
+                [np.cos(origin_ori), -np.sin(origin_ori), 0],
+                [np.sin(origin_ori), np.cos(origin_ori), 0],
+                [0, 0, 1]
+            ])
+            corrected = trimesh.path.polygons.transform_polygon(np.dot(mat2, mat1), freespace_poly)
     
         half_length = (map_size * resolution) // 2
         lin = np.linspace(-half_length, half_length, map_size)
@@ -145,10 +149,12 @@ class RoomConfig(object):
         xc = xx.flatten()
         yc = yy.flatten()
         
-        data = np.full([length*length], 0)
+        data = np.full([map_size*map_size], 0)
 
         xl = Array('d', xc)
         yl = Array('d', yc)
+        
+        global mu
 
         def mu(i):
             return corrected.contains(Point(xl[i], yl[i]))
