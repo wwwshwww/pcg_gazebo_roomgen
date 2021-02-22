@@ -141,7 +141,9 @@ class RoomConfig(object):
                 [np.sin(origin_ori), np.cos(origin_ori), 0],
                 [0, 0, 1]
             ])
-            corrected = trimesh.path.polygons.transform_polygon(np.dot(mat2, mat1), freespace_poly)
+            af = np.dot(mat1,mat2)
+            print(af)
+            corrected = shapely.affinity.affine_transform(freespace_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
     
         half_length = (map_size * resolution) // 2
         lin = np.linspace(-half_length, half_length, map_size)
@@ -149,7 +151,7 @@ class RoomConfig(object):
         xc = xx.flatten()
         yc = yy.flatten()
         
-        data = np.full([map_size*map_size], 0)
+        data = np.full([map_size*map_size], 0, dtype=np.uint8)
 
         xl = Array('d', xc)
         yl = Array('d', yc)
