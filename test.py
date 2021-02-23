@@ -8,8 +8,10 @@ c = CubeRoomGenerator(obstacle_count=10)
 generated_room1 = c.generate_new()
 generated_room2 = c.generate_new()
 
-data = generated_room2.get_occupancy_grid(generated_room2.get_freespace_poly(), [0.1,0.1], np.pi/4)
-img = Image.fromarray(data.reshape((512,512)), 'L')
+pose = [-3.0, 0.0, np.pi/2]
+
+data = generated_room2.get_occupancy_grid(generated_room1.get_freespace_poly(), [-pose[0],-pose[1]], -pose[2])
+img = Image.fromarray(data.reshape((512,512)).T, 'L')
 img.save('my.png')
 
 st = time.time()

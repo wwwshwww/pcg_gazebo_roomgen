@@ -141,7 +141,7 @@ class RoomConfig(object):
                 [np.sin(origin_ori), np.cos(origin_ori), 0],
                 [0, 0, 1]
             ])
-            af = np.dot(mat1,mat2)
+            af = np.dot(mat2,mat1)
             print(af)
             corrected = shapely.affinity.affine_transform(freespace_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
     
