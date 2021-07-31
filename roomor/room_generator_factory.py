@@ -145,7 +145,7 @@ class RoomConfig(object):
             print(af)
             corrected = shapely.affinity.affine_transform(freespace_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
     
-        half_length = (map_size * resolution) // 2
+        half_length = (map_size * resolution) / 2
         lin = np.linspace(-half_length, half_length, map_size)
         xx, yy = np.meshgrid(lin, lin)
         xc = xx.flatten()

@@ -16,7 +16,7 @@ requirements = [
     'trimesh[easy]',
     'shapely',
     'scikit-learn',
-    'pcg_gazebo'
+    'pcg_gazebo==0.7.12'
 ]
 
 setuptools.setup(
@@ -34,6 +34,6 @@ setuptools.setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.6',
     ],
-    keywords='gazebo ros simulation robotics autogeneration environment reinforcement-learning pcg_gazebo',
+    keywords='gazebo ros simulation robotics randomized-environment reinforcement-learning-environments pcg_gazebo',
     install_requires=requirements
 )

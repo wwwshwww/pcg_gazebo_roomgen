@@ -8,8 +8,14 @@
 
 Install using pip:
 
+```bash
+pip install roomor
 ```
-$ pip install roomor
+
+If using python2.7, install numpy-quaternion below version before run above command.
+
+```bash
+pip install numpy-quaternion==2019.12.11.22.25.52
 ```
 
 ## Implemented generator
