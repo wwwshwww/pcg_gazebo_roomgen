@@ -1,4 +1,4 @@
-from roomoro.generator import CubeRoomGenerator
+from roomor.generator import CubeRoomGenerator
 
 import numpy as np
 from PIL import Image

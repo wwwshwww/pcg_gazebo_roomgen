@@ -145,7 +145,6 @@ class CubeRoomGenerator(RoomGeneratorFactory):
                  room_length_max=9,
                  room_wall_thickness=0.05,
                  wall_threshold=0.1,
-                 agent_size=0.3,
                  room_wall_height=0.8,
                  ros_host="localhost", 
                  ros_port=11311, 
@@ -174,7 +173,6 @@ class CubeRoomGenerator(RoomGeneratorFactory):
             wall_threshold=wall_threshold
         )
 
-        self.agent_size = agent_size
         self.room_wall_height = room_wall_height
     
     def generate_new(self):
@@ -197,17 +195,17 @@ class CubeRoomGenerator(RoomGeneratorFactory):
         room_instance.prepare_model_manager(self.obstacle_count, self.obstacle_count)
         
         
-        obstacle_xyy = randoor_config.get_positions(randoor_config.tag_obstacle)
+        obstacle_xyy = np.array(randoor_config.get_positions(randoor_config.tag_obstacle))
         obstacle_poss = np.empty([len(obstacle_xyy), 3])
         obstacle_poss[:,:2] = obstacle_xyy[:,:2]
-        obstacle_poss[:,:2] = self.obstacle_size/2
+        obstacle_poss[:,2] = self.obstacle_size/2
         obstacle_oris = np.zeros_like(obstacle_poss)
         obstacle_oris[:,2] = obstacle_xyy[:,2]
 
-        target_xyy = randoor_config.get_positions(randoor_config.tag_target)
+        target_xyy = np.array(randoor_config.get_positions(randoor_config.tag_target))
         target_poss = np.empty([len(target_xyy), 3])
         target_poss[:,:2] = target_xyy[:,:2]
-        target_poss[:,:2] = self.target_size/2
+        target_poss[:,2] = self.target_size/2
         target_oris = np.zeros_like(target_poss)
         target_oris[:,2] = target_xyy[:,2]
 
@@ -224,10 +222,10 @@ class CubeRoomGenerator(RoomGeneratorFactory):
         randoor_config = room_config.randoor_config
         self.randoor_generator.reposition_target(randoor_config)
 
-        target_xyy = randoor_config.get_positions(randoor_config.tag_target)
+        target_xyy = np.array(randoor_config.get_positions(randoor_config.tag_target))
         target_poss = np.empty([len(target_xyy), 3])
         target_poss[:,:2] = target_xyy[:,:2]
-        target_poss[:,:2] = self.target_size/2
+        target_poss[:,2] = self.target_size/2
         target_oris = np.zeros_like(target_poss)
         target_oris[:,2] = target_xyy[:,2]
 
