@@ -12,11 +12,19 @@ with codecs.open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
     
 requirements = [
-    'numpy-quaternion',
-    'trimesh[easy]',
-    'shapely',
-    'scikit-learn',
-    'pcg_gazebo==0.7.12'
+    'randoor',
+    'pcg_gazebo==0.7.12',
+    'trimesh'
+]
+
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10'
 ]
 
 setuptools.setup(
@@ -29,11 +37,7 @@ setuptools.setup(
     author_email='www.shinderu.www@gmail.com',
     url='https://github.com/wwwshwww/roomor',
     packages=setuptools.find_packages(),
-    classifiers=[
-        'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.6',
-    ],
-    keywords='gazebo ros simulation robotics randomized-environment reinforcement-learning-environments pcg_gazebo',
+    classifiers=classifiers,
+    keywords='gazebo ros simulation robotics randomized-environment reinforcement-learning-environments pcg_gazebo randoor',
     install_requires=requirements
 )

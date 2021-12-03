@@ -1,23 +1,8 @@
 import abc
-
 import numpy as np
-import shapely
-import trimesh
-from shapely.geometry import Polygon, Point
-
-from multiprocessing import Pool, Array
-from contextlib import closing
-
 from pcg_gazebo.task_manager import GazeboProxy
-from pcg_gazebo.simulation.world import World
-from pcg_gazebo.simulation.model import SimulationModel
-
-from pcg_gazebo.generators.occupancy import generate_occupancy_grid
-from pcg_gazebo.visualization import plot_occupancy_grid
-import io
 
 from .model_manager import ModelManager
-from .geometric_util import vec_to_trans
             
 class RoomGeneratorFactory(object):
 
@@ -29,6 +14,7 @@ class RoomGeneratorFactory(object):
             gazebo_port=gazebo_port
         )
         self.model_manager = ModelManager(self.gazebo_proxy)
+        self.randoor_generator = None
         
     @abc.abstractmethod
     def generate_new(self): ## return RoomConfig
@@ -37,14 +23,11 @@ class RoomGeneratorFactory(object):
         
 class RoomConfig(object):
     
-    def __init__(self, model_manager):
+    def __init__(self, model_manager, randoor_config):
         self.model_manager = model_manager
-        self.spawn_config = dict() ## 'tag': {'config_base': ~, 'positions': ~, 'orientations': ~}
         self.config_tags = list()
-        
-        self.point_group = dict()
-        self.polygon_group = dict()
-        self.mesh_group = dict()
+        self.spawn_config = dict() ## 'tag': {'config_base': ~, 'positions': ~, 'orientations': ~}
+        self.randoor_config = randoor_config
         
     @abc.abstractmethod
     def prepare_model_manager(self):
@@ -78,7 +61,10 @@ class RoomConfig(object):
         
     def spawn_all(self):
         for t in self.spawn_config.keys():
-            self.model_manager.apply_model(t, self.spawn_config[t]['positions'], self.spawn_config[t]['orientations'])
+            self.apply(t)
+
+    def apply(self, tag):
+        self.model_manager.apply_model(tag, self.spawn_config[tag]['positions'], self.spawn_config[tag]['orientations'])
     
     def _get_all_moved_models(self, exclude_tags=[None]):
         moved = [
@@ -95,74 +81,8 @@ class RoomConfig(object):
                 
         return models
     
-    @abc.abstractmethod
-    def get_freespace_poly(self, exterior_wall_tag, exclude_tags=[None]):
-        wall_name = self.model_manager.get_base_models(exterior_wall_tag, 1)[0].name
+    def get_freespace_poly(self):
+        return self.randoor_config.get_freespace_poly()
         
-        models = self._get_all_moved_models(exclude_tags=exclude_tags)
-        models['ground_plane'] = SimulationModel.from_gazebo_model('ground_plane')
-        
-        occ_poly = generate_occupancy_grid(models, ground_plane_models=[wall_name])
-        
-        space = Polygon(occ_poly['static']['ground_plane_models'].interiors[0])
-
-        ex = ['ground_plane', 'ground_plane_models']
-        interior_polys = [occ_poly['static'][name] for name in occ_poly['static'].keys() if not name in ex]
-        union_poly = shapely.ops.unary_union(interior_polys)
-        
-        return Polygon(list(space.exterior.coords), [list(p.exterior.coords) for p in union_poly])
-        
-    @abc.abstractmethod
     def get_occupancy_grid(self, freespace_poly, origin_pos=(0,0), origin_ori=0, resolution=0.050, map_size=512):
-#         wall_name = self.model_manager.get_base_models(exterior_wall_tag, 1)[0].name
-        
-#         models = self._get_all_moved_models(exclude_tags=exclude_tags)
-#         models['ground_plane'] = SimulationModel.from_gazebo_model('ground_plane')        
-        
-#         fig = plot_occupancy_grid(
-#             models,
-#             with_ground_plane=True,
-#             static_models_only=False,
-#             exclude_contains=['ground_plane'],
-#             ground_plane_models=[wall_name]
-#         )
-
-#         buf = io.BytesIO()
-#         fig.savefig(buf, format='png')
-#         enc = np.frombuffer(buf.getvalue(), dtype=np.uint8)
-#         dst = cv2.imdecode(enc, cv2.IMREAD_GRAYSCALE)
-        
-        if origin_pos == (0,0) and origin_ori == 0:
-            corrected = freespace_poly
-        else:
-            mat1 = vec_to_trans(origin_pos)
-            mat2 = np.array([
-                [np.cos(origin_ori), -np.sin(origin_ori), 0],
-                [np.sin(origin_ori), np.cos(origin_ori), 0],
-                [0, 0, 1]
-            ])
-            af = np.dot(mat2,mat1)
-            print(af)
-            corrected = shapely.affinity.affine_transform(freespace_poly, [af[0,0],af[0,1],af[1,0],af[1,1],af[0,2],af[1,2]])
-    
-        half_length = (map_size * resolution) / 2
-        lin = np.linspace(-half_length, half_length, map_size)
-        xx, yy = np.meshgrid(lin, lin)
-        xc = xx.flatten()
-        yc = yy.flatten()
-        
-        data = np.full([map_size*map_size], 0, dtype=np.uint8)
-
-        xl = Array('d', xc)
-        yl = Array('d', yc)
-        
-        global mu
-
-        def mu(i):
-            return corrected.contains(Point(xl[i], yl[i]))
-
-        with closing(Pool()) as pool:
-            data[pool.map(mu, range(len(xc)))] = 255
-    
-        return data
-        
+        return self.randoor_config.get_occupancy_grid(freespace_poly, origin_pos, origin_ori, resolution, map_size)
